@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AR Welfare Board ID</title>
+  
+  <!-- A-Frame -->
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <!-- MindAR for A-Frame -->
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    #ui-loading {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      pointer-events: none;
+      transition: opacity 0.5s ease-out;
+    }
+
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid #fff;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+  
+  <!-- Main logic script -->
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  
+  <div id="ui-loading">
+    <div class="spinner"></div>
+    <p style="margin-top: 20px;">Scanning ID Card...</p>
+  </div>
+
+  <!-- 
+    A-Frame Scene with MindAR Image Tracking
+    Note: 'imageTargetSrc' refers to the compiled MindAR targets file.
+  -->
+  <a-scene 
+    mindar-image="imageTargetSrc: ./card-targets.mind; autoStart: true;" 
+    color-space="sRGB" 
+    renderer="colorManagement: true, physicallyCorrectLights" 
+    vr-mode-ui="enabled: false" 
+    device-orientation-permission-ui="enabled: false"
+  >
+    
+    <a-assets>
+      <!-- "Liquid Plastic" / Glassmorphism mixin -->
+      <a-mixin id="glass-panel" 
+               geometry="primitive: plane; width: 1; height: 1" 
+               material="color: #ffffff; opacity: 0.75; transparent: true; roughness: 0.2; metalness: 0.1;" 
+               animation="property: scale; from: 0 0 0; to: 1 1 1; duration: 500; easing: easeOutElastic; startEvents: scale-up">
+      </a-mixin>
+      
+      <!-- Text formatting mixins -->
+      <a-mixin id="title-text" text="font: roboto; align: center; color: #111; width: 1.8;"></a-mixin>
+      <a-mixin id="info-text" text="font: roboto; align: left; color: #333; width: 1.2;"></a-mixin>
+      <a-mixin id="highlight-text" text="font: roboto; align: left; width: 1.2;"></a-mixin>
+    </a-assets>
+
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+    <!-- 
+      MindAR Target Entity
+      targetIndex: 0 binds this container to the front of the physical ID card.
+    -->
+    <a-entity id="card-target" mindar-image-target="targetIndex: 0">
+      
+      <!-- Spatial UI Container with hovering animation -->
+      <a-entity id="spatial-ui-container" 
+                position="0 0 0.05" 
+                animation="property: position; to: 0 0.02 0.05; dir: alternate; dur: 2000; loop: true; easing: easeInOutSine"
+                visible="false">
+                
+        <!-- Left Panel: Driver Identity & Details -->
+        <!-- Placed to the left of the physical card -->
+        <a-entity id="panel-left" position="-1.2 0 0" mixin="glass-panel" geometry="width: 1.1; height: 1.4" scale="0 0 0">
+          <a-text value="Driver Profile" position="0 0.55 0.01" mixin="title-text"></a-text>
+          <a-entity geometry="primitive: plane; width: 0.9; height: 0.01" material="color: #ddd" position="0 0.45 0.01"></a-entity>
+          
+          <a-text id="txt-name" value="Name: ..." position="-0.45 0.3 0.01" mixin="info-text"></a-text>
+          <a-text id="txt-dob" value="DOB: ..." position="-0.45 0.15 0.01" mixin="info-text"></a-text>
+          <a-text id="txt-bg" value="Blood: ..." position="-0.45 0.0 0.01" mixin="info-text"></a-text>
+          <a-text id="txt-vehicle" value="Vehicle: ..." position="-0.45 -0.15 0.01" mixin="info-text"></a-text>
+          <a-text id="txt-lic" value="Lic: ..." position="-0.45 -0.3 0.01" mixin="info-text"></a-text>
+          
+          <!-- Dynamic Status Tag -->
+          <a-entity geometry="primitive: plane; width: 0.6; height: 0.18" material="color: #4CAF50; opacity: 0.9; transparent: true" position="0 -0.5 0.01">
+            <a-text id="txt-status" value="STATUS" position="0 0 0.01" align="center" color="white" width="1.5" font="roboto"></a-text>
+          </a-entity>
+        </a-entity>
+
+        <!-- Center Panel: Highlight overlay directly over the physical card -->
+        <a-entity id="panel-center" position="0 0 0" mixin="glass-panel" geometry="width: 1.05; height: 1.55" material="opacity: 0.05; color: #00bcd4" scale="0 0 0">
+           <!-- Subtle glowing border effect around the tracked card -->
+           <a-entity geometry="primitive: plane; width: 1.0; height: 1.5" material="color: white; opacity: 0.3; wireframe: true" position="0 0 0.01"></a-entity>
+        </a-entity>
+
+        <!-- Right Panel: Welfare Board Updates & Emergency Info -->
+        <!-- Placed to the right of the physical card -->
+        <a-entity id="panel-right" position="1.2 0 0" mixin="glass-panel" geometry="width: 1.1; height: 1.4" scale="0 0 0">
+          <a-text value="Welfare Board" position="0 0.55 0.01" mixin="title-text"></a-text>
+          <a-entity geometry="primitive: plane; width: 0.9; height: 0.01" material="color: #ddd" position="0 0.45 0.01"></a-entity>
+          
+          <a-text value="Latest Campaign:" position="-0.45 0.3 0.01" mixin="info-text" color="#555"></a-text>
+          <a-text id="txt-campaign" value="..." position="-0.45 0.15 0.01" mixin="highlight-text" color="#e91e63" width="1.1"></a-text>
+          
+          <a-text value="Active Benefits:" position="-0.45 -0.05 0.01" mixin="info-text" color="#555"></a-text>
+          <a-text id="txt-benefits" value="..." position="-0.45 -0.2 0.01" mixin="info-text"></a-text>
+
+          <a-text value="Emergency:" position="-0.45 -0.4 0.01" mixin="info-text" color="#d32f2f"></a-text>
+          <a-text id="txt-emergency" value="..." position="-0.45 -0.55 0.01" mixin="info-text"></a-text>
+        </a-entity>
+
+      </a-entity>
+    </a-entity>
+  </a-scene>
+</body>
+</html>
