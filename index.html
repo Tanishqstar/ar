@@ -3,19 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AR Welfare Board ID</title>
+  <title>AR Welfare Board ID - Apple Vision Pro Spatial UI</title>
   
   <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <!-- MindAR for A-Frame -->
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <!-- A-Frame Troika Text Component (crisp SDF/MSDF font rendering) -->
+  <script src="https://unpkg.com/aframe-troika-text/dist/aframe-troika-text.min.js"></script>
   
   <style>
     body {
       margin: 0;
       padding: 0;
       overflow: hidden;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+      background-color: #000;
     }
 
     #ui-loading {
@@ -24,29 +27,69 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      z-index: 10;
+      background: radial-gradient(circle at center, rgba(30, 30, 30, 0.85) 0%, rgba(10, 10, 10, 0.95) 100%);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      z-index: 100;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: white;
+      color: #fff;
       pointer-events: none;
-      transition: opacity 0.5s ease-out;
+      transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.6s;
+    }
+
+    #ui-loading.hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .reticle-box {
+      width: 220px;
+      height: 140px;
+      border: 2px dashed rgba(255, 255, 255, 0.4);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      box-shadow: 0 0 30px rgba(0, 180, 255, 0.15);
+      animation: pulse 2.5s infinite ease-in-out;
     }
 
     .spinner {
-      border: 4px solid rgba(255, 255, 255, 0.3);
-      border-top: 4px solid #fff;
+      border: 3px solid rgba(255, 255, 255, 0.15);
+      border-top: 3px solid #00d2ff;
       border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
+      width: 38px;
+      height: 38px;
+      animation: spin 0.9s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
+    }
+
+    .loading-text {
+      font-size: 15px;
+      letter-spacing: 0.8px;
+      color: rgba(255, 255, 255, 0.9);
+      margin: 0;
+      font-weight: 500;
+    }
+
+    .sub-text {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+      margin-top: 6px;
+      letter-spacing: 0.3px;
     }
 
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { border-color: rgba(255, 255, 255, 0.25); transform: scale(1); }
+      50% { border-color: rgba(0, 210, 255, 0.6); transform: scale(1.02); }
     }
   </style>
   
@@ -56,88 +99,175 @@
 <body>
   
   <div id="ui-loading">
-    <div class="spinner"></div>
-    <p style="margin-top: 20px;">Scanning ID Card...</p>
+    <div class="reticle-box">
+      <div class="spinner"></div>
+    </div>
+    <p class="loading-text">Align ID Card in View</p>
+    <p class="sub-text">Maharashtra Rickshaw Taxi Welfare Board AR</p>
   </div>
 
   <!-- 
     A-Frame Scene with MindAR Image Tracking
-    Note: 'imageTargetSrc' refers to the compiled MindAR targets file.
+    Filter parameters configured for rock-solid stability and zero micro-jitter:
+    - filterMinCF: 0.0001 (Aggressive smoothing)
+    - filterBeta: 0.001 (Substantial stabilization to give UI a heavy, premium feel)
+    - missTolerance: 10 (Wait 10 frames before hiding, avoiding dropouts on quick flickers/glare)
   -->
   <a-scene 
-    mindar-image="imageTargetSrc: ./card-targets.mind; autoStart: true;" 
+    mindar-image="imageTargetSrc: ./card-targets.mind; autoStart: true; filterMinCF: 0.0001; filterBeta: 0.001; missTolerance: 10;" 
     color-space="sRGB" 
-    renderer="colorManagement: true, physicallyCorrectLights" 
+    renderer="colorManagement: true, physicallyCorrectLights: true" 
     vr-mode-ui="enabled: false" 
     device-orientation-permission-ui="enabled: false"
   >
     
     <a-assets>
-      <!-- "Liquid Plastic" / Glassmorphism mixin -->
-      <a-mixin id="glass-panel" 
-               geometry="primitive: plane; width: 1; height: 1" 
-               material="color: #ffffff; opacity: 0.75; transparent: true; roughness: 0.2; metalness: 0.1;" 
-               animation="property: scale; from: 0 0 0; to: 1 1 1; duration: 500; easing: easeOutElastic; startEvents: scale-up">
-      </a-mixin>
-      
-      <!-- Text formatting mixins -->
-      <a-mixin id="title-text" text="font: roboto; align: center; color: #111; width: 1.8;"></a-mixin>
-      <a-mixin id="info-text" text="font: roboto; align: left; color: #333; width: 1.2;"></a-mixin>
-      <a-mixin id="highlight-text" text="font: roboto; align: left; width: 1.2;"></a-mixin>
+      <!-- Base font URL for Troika -->
+      <!-- Pre-created SVG Data URIs for icons (Driver avatar, welfare badge, emergency shield) -->
+      <img id="icon-avatar" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23222831' stroke='%2300ADB5' stroke-width='3'/><circle cx='50' cy='38' r='18' fill='%23EEEEEE'/><path d='M25 80 C25 62, 75 62, 75 80 Z' fill='%23EEEEEE'/></svg>">
+      <img id="icon-welfare" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%231F2937' stroke='%2338BDF8' stroke-width='3'/><path d='M50 22 L72 38 L65 72 L35 72 L28 38 Z' fill='%2338BDF8' opacity='0.8'/><text x='50' y='57' font-size='22' font-weight='bold' text-anchor='middle' fill='%23FFFFFF' font-family='sans-serif'>AR</text></svg>">
+      <img id="icon-emergency" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%233F1D1D' stroke='%23EF4444' stroke-width='3'/><rect x='44' y='26' width='12' height='48' rx='4' fill='%23EF4444'/><rect x='26' y='44' width='48' height='12' rx='4' fill='%23EF4444'/></svg>">
     </a-assets>
 
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
     <!-- 
       MindAR Target Entity
-      targetIndex: 0 binds this container to the front of the physical ID card.
+      targetIndex: 0 binds this container to the physical ID card.
     -->
     <a-entity id="card-target" mindar-image-target="targetIndex: 0">
       
-      <!-- Spatial UI Container with hovering animation -->
-      <a-entity id="spatial-ui-container" 
-                position="0 0 0.05" 
-                animation="property: position; to: 0 0.02 0.05; dir: alternate; dur: 2000; loop: true; easing: easeInOutSine"
-                visible="false">
-                
-        <!-- Left Panel: Driver Identity & Details -->
-        <!-- Placed to the left of the physical card -->
-        <a-entity id="panel-left" position="-1.2 0 0" mixin="glass-panel" geometry="width: 1.1; height: 1.4" scale="0 0 0">
-          <a-text value="Driver Profile" position="0 0.55 0.01" mixin="title-text"></a-text>
-          <a-entity geometry="primitive: plane; width: 0.9; height: 0.01" material="color: #ddd" position="0 0.45 0.01"></a-entity>
+      <!-- 
+        Spatial UI Master Root
+        Hover animation: smooth subtle Y-axis float (Apple Vision Pro spatial feel)
+      -->
+      <a-entity id="spatial-ui-root" 
+                position="0 0 0.04" 
+                scale="0.8 0.8 0.8"
+                visible="false"
+                animation__hover="property: position; to: 0 0.015 0.04; dir: alternate; dur: 2600; loop: true; easing: easeInOutSine"
+                animation__in_scale="property: scale; to: 1 1 1; dur: 600; easing: easeOutCubic; startEvents: animate-in"
+                animation__out_scale="property: scale; to: 0.8 0.8 0.8; dur: 300; easing: easeInCubic; startEvents: animate-out">
+
+        <!-- ================================================================= -->
+        <!-- LEFT PANEL: DRIVER PROFILE (Z-Layered Architecture)              -->
+        <!-- ================================================================= -->
+        <a-entity id="panel-left" position="-1.25 0 0">
           
-          <a-text id="txt-name" value="Name: ..." position="-0.45 0.3 0.01" mixin="info-text"></a-text>
-          <a-text id="txt-dob" value="DOB: ..." position="-0.45 0.15 0.01" mixin="info-text"></a-text>
-          <a-text id="txt-bg" value="Blood: ..." position="-0.45 0.0 0.01" mixin="info-text"></a-text>
-          <a-text id="txt-vehicle" value="Vehicle: ..." position="-0.45 -0.15 0.01" mixin="info-text"></a-text>
-          <a-text id="txt-lic" value="Lic: ..." position="-0.45 -0.3 0.01" mixin="info-text"></a-text>
-          
-          <!-- Dynamic Status Tag -->
-          <a-entity geometry="primitive: plane; width: 0.6; height: 0.18" material="color: #4CAF50; opacity: 0.9; transparent: true" position="0 -0.5 0.01">
-            <a-text id="txt-status" value="STATUS" position="0 0 0.01" align="center" color="white" width="1.5" font="roboto"></a-text>
+          <!-- Layer 1: Backdrop (Frosted Dark Glass: opacity 0.6, color #1A1A1A) -->
+          <a-entity id="panel-left-backdrop"
+                    position="0 0 0" 
+                    geometry="primitive: plane; width: 1.15; height: 1.45" 
+                    material="color: #1A1A1A; opacity: 0; transparent: true; roughness: 0.2; metalness: 0.15;"
+                    animation__fade_in="property: material.opacity; to: 0.6; dur: 600; easing: easeOutCubic; startEvents: animate-in"
+                    animation__fade_out="property: material.opacity; to: 0; dur: 300; easing: easeInCubic; startEvents: animate-out">
+            <!-- Glass rim highlight outline -->
+            <a-entity geometry="primitive: plane; width: 1.15; height: 1.45" 
+                      material="color: #555555; wireframe: true; opacity: 0.2" 
+                      position="0 0 0.002"></a-entity>
+          </a-entity>
+
+          <!-- Layer 2: Accents & Images (Z = 0.05) -->
+          <a-entity id="panel-left-accents" position="0 0 0.05">
+            <!-- Driver Avatar Icon -->
+            <a-image src="#icon-avatar" position="-0.36 0.44 0" width="0.22" height="0.22" transparent="true"></a-image>
+            
+            <!-- Glass Sub-card divider line -->
+            <a-entity geometry="primitive: plane; width: 0.98; height: 0.005" material="color: #38BDF8; opacity: 0.4; transparent: true" position="0 0.26 0"></a-entity>
+            
+            <!-- Status Badge Pillow/Card -->
+            <a-entity id="badge-status-bg" geometry="primitive: plane; width: 0.45; height: 0.12" 
+                      material="color: #059669; opacity: 0.85; transparent: true" 
+                      position="0 -0.52 0">
+              <a-entity geometry="primitive: plane; width: 0.45; height: 0.12" material="color: #A7F3D0; wireframe: true; opacity: 0.4" position="0 0 0.002"></a-entity>
+            </a-entity>
+          </a-entity>
+
+          <!-- Layer 3: Typography via Troika-Text (Z = 0.08, Razor Sharp SDF) -->
+          <a-entity id="panel-left-typography" position="0 0 0.08">
+            <!-- Header Title -->
+            <a-entity troika-text="value: DRIVER PROFILE; font: https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Mu4mxK.woff; fontSize: 0.06; color: #FFFFFF; outlineWidth: 0.002; outlineColor: #000000; align: left; fontWeight: 700;" position="-0.2 0.46 0"></a-entity>
+            <a-entity troika-text="value: Welfare Board Verified; font: https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Mu4mxK.woff; fontSize: 0.032; color: #38BDF8; outlineWidth: 0.001; outlineColor: #000000; align: left;" position="-0.2 0.38 0"></a-entity>
+
+            <!-- Dynamic Fields -->
+            <a-entity id="txt-name" troika-text="value: Name: Loading...; font: https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Mu4mxK.woff; fontSize: 0.046; color: #FFFFFF; outlineWidth: 0.002; outlineColor: #000000; align: left;" position="-0.48 0.18 0"></a-entity>
+            <a-entity id="txt-dob" troika-text="value: DOB: ...; font: https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Mu4mxK.woff; fontSize: 0.042; color: #D1D5DB; outlineWidth: 0.002; outlineColor: #000000; align: left;" position="-0.48 0.06 0"></a-entity>
+            <a-entity id="txt-bg" troika-text="value: Blood Group: ...; font: https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Mu4mxK.woff; fontSize: 0.042; color: #D1D5DB; outlineWidth: 0.002; outlineColor: #000000; align: left;" position="-0.48 -0.06 0"></a-entity>
+            <a-entity id="txt-vehicle" troika-text="value: Vehicle: ...; font: https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Mu4mxK.woff; fontSize: 0.042; color: #D1D5DB; outlineWidth: 0.002; outlineColor: #000000; align: left;" position="-0.48 -0.18 0"></a-entity>
+            <a-entity id="txt-lic" troika-text="value: License: ...; font: https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Mu4mxK.woff; fontSize: 0.042; color: #D1D5DB; outlineWidth: 0.002; outlineColor: #000000; align: left;" position="-0.48 -0.30 0"></a-entity>
+
+            <!-- Status text centered inside badge -->
+            <a-entity id="txt-status" troika-text="value: ACTIVE; font: https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Mu4mxK.woff; fontSize: 0.052; color: #FFFFFF; outlineWidth: 0.002; outlineColor: #000000; align: center; fontWeight: 700;" position="0 -0.52 0"></a-entity>
           </a-entity>
         </a-entity>
 
-        <!-- Center Panel: Highlight overlay directly over the physical card -->
-        <a-entity id="panel-center" position="0 0 0" mixin="glass-panel" geometry="width: 1.05; height: 1.55" material="opacity: 0.05; color: #00bcd4" scale="0 0 0">
-           <!-- Subtle glowing border effect around the tracked card -->
-           <a-entity geometry="primitive: plane; width: 1.0; height: 1.5" material="color: white; opacity: 0.3; wireframe: true" position="0 0 0.01"></a-entity>
+        <!-- ================================================================= -->
+        <!-- CENTER PANEL: CARD RETICLE OVERLAY                               -->
+        <!-- ================================================================= -->
+        <a-entity id="panel-center" position="0 0 0">
+          <!-- Frosted subtle tint directly hovering above physical card -->
+          <a-entity id="panel-center-backdrop"
+                    position="0 0 0" 
+                    geometry="primitive: plane; width: 1.05; height: 1.55" 
+                    material="color: #00B4D8; opacity: 0; transparent: true; roughness: 0.2; metalness: 0.2;"
+                    animation__fade_in="property: material.opacity; to: 0.08; dur: 600; easing: easeOutCubic; startEvents: animate-in"
+                    animation__fade_out="property: material.opacity; to: 0; dur: 300; easing: easeInCubic; startEvents: animate-out">
+            <!-- Glowing target frame -->
+            <a-entity geometry="primitive: plane; width: 1.04; height: 1.54" material="color: #38BDF8; opacity: 0.35; wireframe: true" position="0 0 0.002"></a-entity>
+          </a-entity>
+
+          <!-- Layer 3: Spatial Tag -->
+          <a-entity position="0 0.84 0.08" troika-text="value: MAHARASHTRA WELFARE BOARD; font: https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Mu4mxK.woff; fontSize: 0.038; color: #94A3B8; outlineWidth: 0.001; outlineColor: #000000; align: center; letterSpacing: 0.08;"></a-entity>
         </a-entity>
 
-        <!-- Right Panel: Welfare Board Updates & Emergency Info -->
-        <!-- Placed to the right of the physical card -->
-        <a-entity id="panel-right" position="1.2 0 0" mixin="glass-panel" geometry="width: 1.1; height: 1.4" scale="0 0 0">
-          <a-text value="Welfare Board" position="0 0.55 0.01" mixin="title-text"></a-text>
-          <a-entity geometry="primitive: plane; width: 0.9; height: 0.01" material="color: #ddd" position="0 0.45 0.01"></a-entity>
+        <!-- ================================================================= -->
+        <!-- RIGHT PANEL: WELFARE UPDATES & EMERGENCY (Z-Layered Architecture)-->
+        <!-- ================================================================= -->
+        <a-entity id="panel-right" position="1.25 0 0">
           
-          <a-text value="Latest Campaign:" position="-0.45 0.3 0.01" mixin="info-text" color="#555"></a-text>
-          <a-text id="txt-campaign" value="..." position="-0.45 0.15 0.01" mixin="highlight-text" color="#e91e63" width="1.1"></a-text>
-          
-          <a-text value="Active Benefits:" position="-0.45 -0.05 0.01" mixin="info-text" color="#555"></a-text>
-          <a-text id="txt-benefits" value="..." position="-0.45 -0.2 0.01" mixin="info-text"></a-text>
+          <!-- Layer 1: Backdrop (Frosted Dark Glass: opacity 0.6, color #1A1A1A) -->
+          <a-entity id="panel-right-backdrop"
+                    position="0 0 0" 
+                    geometry="primitive: plane; width: 1.15; height: 1.45" 
+                    material="color: #1A1A1A; opacity: 0; transparent: true; roughness: 0.2; metalness: 0.15;"
+                    animation__fade_in="property: material.opacity; to: 0.6; dur: 600; easing: easeOutCubic; startEvents: animate-in"
+                    animation__fade_out="property: material.opacity; to: 0; dur: 300; easing: easeInCubic; startEvents: animate-out">
+            <a-entity geometry="primitive: plane; width: 1.15; height: 1.45" 
+                      material="color: #555555; wireframe: true; opacity: 0.2" 
+                      position="0 0 0.002"></a-entity>
+          </a-entity>
 
-          <a-text value="Emergency:" position="-0.45 -0.4 0.01" mixin="info-text" color="#d32f2f"></a-text>
-          <a-text id="txt-emergency" value="..." position="-0.45 -0.55 0.01" mixin="info-text"></a-text>
+          <!-- Layer 2: Accents & Images (Z = 0.05) -->
+          <a-entity id="panel-right-accents" position="0 0 0.05">
+            <!-- Welfare Board Emblem Icon -->
+            <a-image src="#icon-welfare" position="-0.38 0.44 0" width="0.20" height="0.20" transparent="true"></a-image>
+            
+            <!-- Emergency Red Mini Icon -->
+            <a-image src="#icon-emergency" position="-0.40 -0.38 0" width="0.14" height="0.14" transparent="true"></a-image>
+
+            <!-- Divider Lines -->
+            <a-entity geometry="primitive: plane; width: 0.98; height: 0.005" material="color: #38BDF8; opacity: 0.4; transparent: true" position="0 0.26 0"></a-entity>
+            <a-entity geometry="primitive: plane; width: 0.98; height: 0.003" material="color: #4B5563; opacity: 0.4; transparent: true" position="0 -0.25 0"></a-entity>
+          </a-entity>
+
+          <!-- Layer 3: Typography via Troika-Text (Z = 0.08, Razor Sharp SDF) -->
+          <a-entity id="panel-right-typography" position="0 0 0.08">
+            <!-- Header Title -->
+            <a-entity troika-text="value: WELFARE SCHEMES; font: https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Mu4mxK.woff; fontSize: 0.06; color: #FFFFFF; outlineWidth: 0.002; outlineColor: #000000; align: left; fontWeight: 700;" position="-0.22 0.46 0"></a-entity>
+            <a-entity troika-text="value: Active Government Benefits; font: https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Mu4mxK.woff; fontSize: 0.032; color: #38BDF8; outlineWidth: 0.001; outlineColor: #000000; align: left;" position="-0.22 0.38 0"></a-entity>
+
+            <!-- Campaign Section -->
+            <a-entity troika-text="value: LATEST CAMPAIGN; font: https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Mu4mxK.woff; fontSize: 0.032; color: #F59E0B; outlineWidth: 0.001; outlineColor: #000000; align: left; letterSpacing: 0.06;" position="-0.48 0.18 0"></a-entity>
+            <a-entity id="txt-campaign" troika-text="value: Loading campaign...; font: https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Mu4mxK.woff; fontSize: 0.042; color: #FFFFFF; outlineWidth: 0.002; outlineColor: #000000; align: left; maxWidth: 0.98;" position="-0.48 0.10 0"></a-entity>
+
+            <!-- Benefits Section -->
+            <a-entity troika-text="value: ENROLLED BENEFITS; font: https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Mu4mxK.woff; fontSize: 0.032; color: #10B981; outlineWidth: 0.001; outlineColor: #000000; align: left; letterSpacing: 0.06;" position="-0.48 -0.02 0"></a-entity>
+            <a-entity id="txt-benefits" troika-text="value: • Loading...; font: https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Mu4mxK.woff; fontSize: 0.040; color: #E5E7EB; outlineWidth: 0.002; outlineColor: #000000; align: left; lineHeight: 1.35;" position="-0.48 -0.10 0"></a-entity>
+
+            <!-- Emergency Section -->
+            <a-entity troika-text="value: EMERGENCY HELPLINE; font: https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Mu4mxK.woff; fontSize: 0.032; color: #EF4444; outlineWidth: 0.001; outlineColor: #000000; align: left; letterSpacing: 0.06;" position="-0.28 -0.32 0"></a-entity>
+            <a-entity id="txt-emergency" troika-text="value: Loading contacts...; font: https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Mu4mxK.woff; fontSize: 0.040; color: #FCA5A5; outlineWidth: 0.002; outlineColor: #000000; align: left; lineHeight: 1.3;" position="-0.28 -0.42 0"></a-entity>
+          </a-entity>
         </a-entity>
 
       </a-entity>
